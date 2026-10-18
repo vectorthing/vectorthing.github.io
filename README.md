@@ -1,6 +1,6 @@
 # VectorThing
 
-VectorThing is a polished, browser-based air-art planner for GeoFS. Choose a shape, set its center and flight settings, preview the route, and export a detailed waypoint plan as JSON.
+VectorThing is a browser-based air-art planner for GeoFS. Choose a built-in shape or draw and save your own, set the center and flight settings, preview the route, then export or copy a GeoFS flight-plan JSON file.
 
 ## Run locally
 
@@ -12,6 +12,14 @@ The repository is [github.com/vectorthing/vectorthing.github.io](https://github.
 
 If the site URL still returns 404 after a successful workflow run, open the repository's **Settings → Pages** and set **Build and deployment → Source** to **GitHub Actions**, then rerun **Deploy VectorThing to GitHub Pages** from the **Actions** tab. Verify that the deployment URL shown by the workflow is `https://vectorthing.github.io/` (not the old `/VectorThing/` project path). The GitHub Pages settings must be refreshed on GitHub; changing the repository name alone does not update this checkout's remote or guarantee the Pages site configuration is correct.
 
-## Flight plans
+## Draw and save shapes
 
-The downloaded `.json` includes the selected shape, center coordinates, route settings, estimated distance and duration, and every waypoint's WGS84 coordinates, heading, altitude, speed, leg distance, and estimated leg time. It uses VectorThing's portable `vectorthing.flight-plan` format; it is not an official GeoFS import file. Adapt or enter the waypoints in your simulator, and check airspace and local rules before flying.
+Select **Draw your own**, drag a closed path on the canvas, optionally name it, and choose **Save shape**. Saved shapes are kept in this browser's local storage on this device; clearing site data removes them.
+
+## Choose a departure airport
+
+Search the airport field by airport name, city, ICAO code, or IATA code, then select the matching airport from the list. The built-in directory includes major airports around the world. Use **Use custom coordinates instead** for an airport or departure point that is not listed.
+
+## GeoFS flight plans
+
+Use **Download GeoFS JSON** or **Copy GeoFS JSON** in the Waypoints section. The JSON follows GeoFS's flight-plan structure: a top-level `version: 1` and a `route` array containing waypoint objects with `ident`, `type`, `lat`, `lon`, `alt`, `spd`, and `heading` fields. In GeoFS, open **NAV → Flight Plan → Import** and select the downloaded file (or paste the copied JSON if using the import text field). Waypoints are sampled along the route in order; the last waypoint closes the shape back toward its start. Verify the import and route in GeoFS, and check airspace and local rules before flying.
