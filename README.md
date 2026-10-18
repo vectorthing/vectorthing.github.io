@@ -5,7 +5,7 @@ VectorThing is a browser-based air-art planner for GeoFS. Choose a built-in shap
 
 ## Draw and save shapes
 
-Select **Draw your own**, drag a closed path on the canvas, optionally name it, and choose **Save shape**. Saved shapes are kept in this browser's local storage on this device; clearing site data removes them.
+We've just added our newest feature! Draw and Save! Just select **Draw your own**, drag a closed path on the canvas, optionally name it, and choose **Save shape**. Saved shapes are kept in this browser's local storage on this device; clearing site data removes them.
 
 ## Choose a departure airport
 
