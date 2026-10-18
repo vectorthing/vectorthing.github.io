@@ -12,6 +12,10 @@
     modalSimBriefButton: $("#modal-simbrief-button"), flightPlanJson: $("#flight-plan-json")
   };
   const savedShapesKey = "vectorthing.saved-shapes.v1";
+  const discordClientId = "1561402874733527040";
+  const discordRedirectUri = "https://vectorthing.github.io/";
+  const discordSessionKey = "vectorthing.discord-session.v1";
+  const discordStateKey = "vectorthing.discord-state.v1";
   const shapeNames = { heart: "Heart", star: "Star", infinity: "Infinity", circle: "Circle", diamond: "Diamond", square: "Square" };
   const airports = [
     ["KSFO", "SFO", "San Francisco International", "San Francisco", "USA", 37.6213, -122.3790],
@@ -78,6 +82,7 @@
   let center = { lat: 37.6213, lon: -122.379, name: "San Francisco International" };
   let manualCoordinates = false;
   let toastTimer;
+  let discordUser = null;
 
   function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
   function getCenter() {
@@ -372,6 +377,115 @@
     toastTimer = setTimeout(() => elements.toast.classList.remove("visible"), 2600);
   }
 
+  function showStudio() {
+    document.body.classList.add("app-active");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
+  function openLoginModal(message = "") {
+    const modal = $("#login-modal");
+    $("#login-status").textContent = message;
+    modal.removeAttribute("hidden");
+    requestAnimationFrame(() => $("#discord-login-button").focus());
+  }
+
+  function closeLoginModal() {
+    $("#login-modal").setAttribute("hidden", "hidden");
+    if (!document.body.classList.contains("app-active")) $("#start-vectoring-button").focus();
+  }
+
+  function updateDiscordAccount(user) {
+    discordUser = user;
+    const account = $("#discord-account");
+    const name = user.global_name || user.username || "Discord member";
+    $("#discord-username").textContent = name;
+    const avatar = $("#discord-avatar");
+    avatar.replaceChildren();
+    if (user.avatar) {
+      const image = document.createElement("img");
+      image.src = `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.png?size=64`;
+      image.alt = "";
+      avatar.append(image);
+    } else {
+      avatar.textContent = name.slice(0, 1).toUpperCase();
+    }
+    account.hidden = false;
+  }
+
+  function clearDiscordSession() {
+    discordUser = null;
+    sessionStorage.removeItem(discordSessionKey);
+    sessionStorage.removeItem(discordStateKey);
+    $("#discord-account").hidden = true;
+  }
+
+  async function fetchDiscordUser(accessToken) {
+    const response = await fetch("https://discord.com/api/v10/users/@me", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!response.ok) throw new Error("Discord could not verify your sign-in. Please try again.");
+    return response.json();
+  }
+
+  async function initializeDiscordAuth() {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const returnedToken = params.get("access_token");
+    const returnedState = params.get("state");
+    if (params.has("error")) {
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+      openLoginModal("Discord sign-in was cancelled. You can try again whenever you are ready.");
+      return;
+    }
+    if (returnedToken) {
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+      const expectedState = sessionStorage.getItem(discordStateKey);
+      sessionStorage.removeItem(discordStateKey);
+      if (!expectedState || returnedState !== expectedState || params.get("iss") !== "https://discord.com") {
+        clearDiscordSession();
+        openLoginModal("We couldn't verify this Discord sign-in. Please start again.");
+        return;
+      }
+      const expiresAt = Date.now() + Number(params.get("expires_in") || 0) * 1000;
+      try {
+        const user = await fetchDiscordUser(returnedToken);
+        sessionStorage.setItem(discordSessionKey, JSON.stringify({ accessToken: returnedToken, expiresAt, user }));
+        updateDiscordAccount(user);
+        showStudio();
+      } catch (error) {
+        clearDiscordSession();
+        openLoginModal(error.message || "Unable to finish Discord sign-in. Please try again.");
+      }
+      return;
+    }
+
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(discordSessionKey) || "null");
+      if (!saved || !saved.accessToken || saved.expiresAt <= Date.now()) {
+        clearDiscordSession();
+        return;
+      }
+      const user = await fetchDiscordUser(saved.accessToken);
+      saved.user = user;
+      sessionStorage.setItem(discordSessionKey, JSON.stringify(saved));
+      updateDiscordAccount(user);
+    } catch {
+      clearDiscordSession();
+    }
+  }
+
+  function beginDiscordLogin() {
+    const randomState = Array.from(crypto.getRandomValues(new Uint8Array(24)), (value) => value.toString(16).padStart(2, "0")).join("");
+    sessionStorage.setItem(discordStateKey, randomState);
+    const params = new URLSearchParams({
+      client_id: discordClientId,
+      response_type: "token",
+      redirect_uri: discordRedirectUri,
+      scope: "identify",
+      state: randomState
+    });
+    window.location.assign(`https://discord.com/oauth2/authorize?${params.toString()}`);
+  }
+
   function openGenerateModal() {
     buildRoute();
     elements.flightPlanJson.value = JSON.stringify(buildFlightPlan(), null, 2);
@@ -601,11 +715,26 @@
     openGenerateModal();
     showToast(`${shapeNames[activeShape]} flight plan ready · choose an export.`);
   });
+  $("#start-vectoring-button").addEventListener("click", () => {
+    if (discordUser) showStudio();
+    else openLoginModal();
+  });
+  $("#discord-login-button").addEventListener("click", beginDiscordLogin);
+  $("#login-modal-close").addEventListener("click", closeLoginModal);
+  $("#login-modal").addEventListener("click", (event) => {
+    if (event.target === $("#login-modal")) closeLoginModal();
+  });
+  $("#discord-logout-button").addEventListener("click", () => {
+    clearDiscordSession();
+    document.body.classList.remove("app-active");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
   elements.generateModal.addEventListener("click", (event) => {
     if (event.target === elements.generateModal) closeGenerateModal();
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && getComputedStyle(elements.generateModal).display !== "none") closeGenerateModal();
+    if (event.key === "Escape" && !$("#login-modal").hidden) closeLoginModal();
   });
   $("#download-button").addEventListener("click", downloadPlan);
   $("#copy-button").addEventListener("click", copyPlan);
@@ -616,4 +745,5 @@
   renderAirports();
   renderSavedShapes();
   buildRoute();
+  initializeDiscordAuth();
 })();
