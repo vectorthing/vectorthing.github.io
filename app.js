@@ -8,7 +8,8 @@
     radius: $("#radius"), radiusValue: $("#radius-value"), waypoints: $("#waypoints"), waypointsValue: $("#waypoints-value"),
     altitude: $("#altitude"), speed: $("#speed"), routeLayer: $("#route-layer"), centerLayer: $("#center-layer"),
     table: $("#waypoint-table"), toast: $("#toast"), generateModal: $("#generate-modal"),
-    modalClose: $("#generate-modal-close"), modalCopyButton: $("#modal-copy-button"), modalDownloadButton: $("#modal-download-button")
+    modalClose: $("#generate-modal-close"), modalCopyButton: $("#modal-copy-button"), modalDownloadButton: $("#modal-download-button"),
+    modalSimBriefButton: $("#modal-simbrief-button"), flightPlanJson: $("#flight-plan-json")
   };
   const savedShapesKey = "vectorthing.saved-shapes.v1";
   const shapeNames = { heart: "Heart", star: "Star", infinity: "Infinity", circle: "Circle", diamond: "Diamond", square: "Square" };
@@ -318,18 +319,50 @@
   }
 
   function buildFlightPlan() {
-    return {
-      version: 1,
-      route: route.map((waypoint, index) => ({
-        ident: `VT${String(index + 1).padStart(3, "0")}`,
-        type: "WPT",
-        lat: Number(waypoint.lat.toFixed(5)),
-        lon: Number(waypoint.lon.toFixed(5)),
-        alt: Math.round(waypoint.altitudeFt),
-        spd: Math.round(waypoint.speedKts),
-        heading: Number(waypoint.headingDeg.toFixed(2))
-      }))
-    };
+    return route.map((waypoint, index) => ({
+      ident: `VT${String(index + 1).padStart(3, "0")}`,
+      type: "WPT",
+      lat: Number(waypoint.lat.toFixed(5)),
+      lon: Number(waypoint.lon.toFixed(5)),
+      alt: Math.round(waypoint.altitudeFt),
+      spd: Math.round(waypoint.speedKts),
+      heading: Number(waypoint.headingDeg.toFixed(2))
+    }));
+  }
+
+  function buildSimBriefRouteText() {
+    return route.map((waypoint, index) => {
+      const legLabel = index === 0 ? "START" : `WPT${String(index + 1).padStart(2, "0")}`;
+      return `${legLabel},${waypoint.lat.toFixed(5)},${waypoint.lon.toFixed(5)},${Math.round(waypoint.altitudeFt)}`;
+    }).join("\n");
+  }
+
+  function buildSimBriefShareLink() {
+    const routeText = buildSimBriefRouteText();
+    const baseUrl = "https://www.simbrief.com/system/dispatch.php";
+    const params = new URLSearchParams({
+      source: "VectorThing",
+      route: routeText,
+      shape: activeShape,
+      airport: center.name
+    });
+    return `${baseUrl}?${params.toString()}`;
+  }
+
+  async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const temporary = document.createElement("textarea");
+    temporary.value = text;
+    temporary.style.position = "fixed";
+    temporary.style.opacity = "0";
+    document.body.append(temporary);
+    temporary.focus();
+    temporary.select();
+    document.execCommand("copy");
+    temporary.remove();
   }
 
   function showToast(message) {
@@ -341,12 +374,30 @@
 
   function openGenerateModal() {
     buildRoute();
-    elements.generateModal.hidden = false;
+    elements.flightPlanJson.value = JSON.stringify(buildFlightPlan(), null, 2);
+    elements.generateModal.removeAttribute("hidden");
+    elements.generateModal.style.display = "grid";
   }
 
   function closeGenerateModal() {
-    elements.generateModal.hidden = true;
+    elements.generateModal.setAttribute("hidden", "hidden");
+    elements.generateModal.style.display = "none";
   }
+
+  window.openGenerateModal = openGenerateModal;
+  window.closeGenerateModal = closeGenerateModal;
+  window.copyModalPlan = async () => {
+    await copyPlan();
+    closeGenerateModal();
+  };
+  window.downloadModalPlan = () => {
+    downloadPlan();
+    closeGenerateModal();
+  };
+  window.copySimBriefLink = async () => {
+    await copySimBriefShareLink();
+    closeGenerateModal();
+  };
 
   function filename() {
     const locationSlug = center.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -370,18 +421,24 @@
   async function copyPlan() {
     const data = JSON.stringify(buildFlightPlan(), null, 2);
     try {
-      await navigator.clipboard.writeText(data);
+      await copyText(data);
+      showToast("GeoFS flight-plan JSON copied to clipboard.");
     } catch {
-      const temporary = document.createElement("textarea");
-      temporary.value = data;
-      temporary.style.position = "fixed";
-      temporary.style.opacity = "0";
-      document.body.append(temporary);
-      temporary.select();
-      document.execCommand("copy");
-      temporary.remove();
+      elements.flightPlanJson.value = data;
+      showToast("Clipboard blocked — use the JSON text box in the export dialog to paste manually.");
     }
-    showToast("GeoFS flight-plan JSON copied to clipboard.");
+  }
+
+  async function copySimBriefShareLink() {
+    const link = buildSimBriefShareLink();
+    try {
+      await copyText(link);
+      showToast("SimBrief share link copied to clipboard.");
+    } catch {
+      elements.flightPlanJson.value = `${link}\n\n${JSON.stringify(buildFlightPlan(), null, 2)}`;
+      showToast("SimBrief link unavailable to clipboard — use the JSON text box and paste the link manually.");
+    }
+    window.open(link, "_blank", "noopener,noreferrer");
   }
 
   function setActiveShape(shape, name) {
@@ -544,20 +601,11 @@
     openGenerateModal();
     showToast(`${shapeNames[activeShape]} flight plan ready · choose an export.`);
   });
-  elements.modalCopyButton.addEventListener("click", () => {
-    copyPlan();
-    closeGenerateModal();
-  });
-  elements.modalDownloadButton.addEventListener("click", () => {
-    downloadPlan();
-    closeGenerateModal();
-  });
-  elements.modalClose.addEventListener("click", closeGenerateModal);
   elements.generateModal.addEventListener("click", (event) => {
     if (event.target === elements.generateModal) closeGenerateModal();
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !elements.generateModal.hidden) closeGenerateModal();
+    if (event.key === "Escape" && getComputedStyle(elements.generateModal).display !== "none") closeGenerateModal();
   });
   $("#download-button").addEventListener("click", downloadPlan);
   $("#copy-button").addEventListener("click", copyPlan);
