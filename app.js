@@ -251,7 +251,7 @@
   }
 
   async function copyPlan() {
-    const data = JSON.stringify(buildFlightPlan(), null, 2);
+    const data = JSON.stringify(buildFlightPlan().waypoints, null, 2);
     try {
       await navigator.clipboard.writeText(data);
     } catch {
@@ -264,7 +264,7 @@
       document.execCommand("copy");
       temporary.remove();
     }
-    showToast("Flight plan JSON copied to clipboard.");
+    showToast("Waypoints copied to clipboard.");
   }
 
   $$(".shape-option").forEach((button) => button.addEventListener("click", () => {

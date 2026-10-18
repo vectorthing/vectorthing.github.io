@@ -8,15 +8,9 @@ This is a static website with no build step or dependencies. Open `index.html` i
 
 ## Publish at the root URL
 
-To get a clean address with no `/VectorThing` path, GitHub Pages needs a user or organization site repository named exactly `vectorthing.github.io`. The configured source repository is currently [github.com/vectorthing/VectorThing](https://github.com/vectorthing/VectorThing), so the root URL will not work until the repository is renamed.
+The repository is [github.com/vectorthing/vectorthing.github.io](https://github.com/vectorthing/vectorthing.github.io), which should publish as [https://vectorthing.github.io](https://vectorthing.github.io) without a project-name path. The local `origin` remote already points to the renamed repository, and the Pages workflow is configured in `.github/workflows/pages.yml`.
 
-1. On GitHub, open the repository **Settings → General → Repository name** and rename it to `vectorthing.github.io` (the GitHub account name must be `vectorthing`).
-2. Update this local checkout's `origin` remote to `https://github.com/vectorthing/vectorthing.github.io.git`.
-3. In **Settings → Pages**, select **GitHub Actions** as the deployment source.
-4. Push the current project to the renamed repository's `main` branch. The included workflow deploys it automatically.
-5. Check **Actions** for a successful **Deploy VectorThing to GitHub Pages** run.
-
-The site address will then be [https://vectorthing.github.io](https://vectorthing.github.io) — no project-name path. Until the repository is renamed and Pages deploys successfully, this address is not live.
+If the site URL still returns 404 after a successful workflow run, open the repository's **Settings → Pages** and set **Build and deployment → Source** to **GitHub Actions**, then rerun **Deploy VectorThing to GitHub Pages** from the **Actions** tab. Verify that the deployment URL shown by the workflow is `https://vectorthing.github.io/` (not the old `/VectorThing/` project path). The GitHub Pages settings must be refreshed on GitHub; changing the repository name alone does not update this checkout's remote or guarantee the Pages site configuration is correct.
 
 ## Flight plans
 
