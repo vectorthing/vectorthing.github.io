@@ -96,6 +96,18 @@
       </main>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="generate-modal" class="modal-backdrop" hidden>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="generate-modal-title">
+        <button id="generate-modal-close" class="modal-close" type="button" aria-label="Close export dialog">✕</button>
+        <p class="step-label">04 — EXPORT</p>
+        <h2 id="generate-modal-title">Flight plan ready</h2>
+        <p>Choose whether to copy the GeoFS JSON straight to your clipboard or download it as a file.</p>
+        <div class="modal-actions">
+          <button id="modal-copy-button" class="secondary-button" type="button">Copy GeoFS JSON</button>
+          <button id="modal-download-button" class="download-button" type="button">Download GeoFS JSON</button>
+        </div>
+      </div>
+    </div>
     <script src="app.js"></script>
   </body>
 </html>

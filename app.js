@@ -7,7 +7,8 @@
     airportSearch: $("#airport-search"), airportStatus: $("#airport-status"),
     radius: $("#radius"), radiusValue: $("#radius-value"), waypoints: $("#waypoints"), waypointsValue: $("#waypoints-value"),
     altitude: $("#altitude"), speed: $("#speed"), routeLayer: $("#route-layer"), centerLayer: $("#center-layer"),
-    table: $("#waypoint-table"), toast: $("#toast")
+    table: $("#waypoint-table"), toast: $("#toast"), generateModal: $("#generate-modal"),
+    modalClose: $("#generate-modal-close"), modalCopyButton: $("#modal-copy-button"), modalDownloadButton: $("#modal-download-button")
   };
   const savedShapesKey = "vectorthing.saved-shapes.v1";
   const shapeNames = { heart: "Heart", star: "Star", infinity: "Infinity", circle: "Circle", diamond: "Diamond", square: "Square" };
@@ -338,6 +339,15 @@
     toastTimer = setTimeout(() => elements.toast.classList.remove("visible"), 2600);
   }
 
+  function openGenerateModal() {
+    buildRoute();
+    elements.generateModal.hidden = false;
+  }
+
+  function closeGenerateModal() {
+    elements.generateModal.hidden = true;
+  }
+
   function filename() {
     const locationSlug = center.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const shapeSlug = (shapeNames[activeShape] || "custom-shape").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -531,8 +541,23 @@
     control.addEventListener("change", buildRoute);
   });
   $("#generate-button").addEventListener("click", () => {
-    buildRoute();
-    showToast(`${shapeNames[activeShape]} flight plan generated · ${route.length} waypoints.`);
+    openGenerateModal();
+    showToast(`${shapeNames[activeShape]} flight plan ready · choose an export.`);
+  });
+  elements.modalCopyButton.addEventListener("click", () => {
+    copyPlan();
+    closeGenerateModal();
+  });
+  elements.modalDownloadButton.addEventListener("click", () => {
+    downloadPlan();
+    closeGenerateModal();
+  });
+  elements.modalClose.addEventListener("click", closeGenerateModal);
+  elements.generateModal.addEventListener("click", (event) => {
+    if (event.target === elements.generateModal) closeGenerateModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !elements.generateModal.hidden) closeGenerateModal();
   });
   $("#download-button").addEventListener("click", downloadPlan);
   $("#copy-button").addEventListener("click", copyPlan);
