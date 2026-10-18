@@ -110,10 +110,24 @@
     }
   }
 
+  function normalizeShapePoints(points) {
+    if (!Array.isArray(points)) return [];
+    return points
+      .filter((point) => point && Number.isFinite(point.x) && Number.isFinite(point.y))
+      .map((point) => ({ x: Number(point.x), y: Number(point.y) }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+  }
+
   function loadSavedShapes() {
     try {
       const parsed = JSON.parse(localStorage.getItem(savedShapesKey) || "[]");
-      return Array.isArray(parsed) ? parsed.filter((shape) => shape && typeof shape.id === "string" && typeof shape.name === "string" && Array.isArray(shape.points) && shape.points.length >= 3) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.flatMap((shape) => {
+        if (!shape || typeof shape.id !== "string" || typeof shape.name !== "string") return [];
+        const points = normalizeShapePoints(shape.points);
+        if (points.length < 3) return [];
+        return [{ ...shape, points }];
+      });
     } catch {
       return [];
     }
@@ -380,6 +394,8 @@
     const container = $("#saved-shapes");
     container.replaceChildren();
     savedShapes.forEach((shape) => {
+      const points = normalizeShapePoints(shape.points);
+      if (points.length < 3) return;
       const button = document.createElement("button");
       button.type = "button";
       button.className = "saved-shape-button";
@@ -389,7 +405,7 @@
       const icon = document.createElementNS(SVG_NS, "svg");
       icon.setAttribute("viewBox", "0 0 40 40");
       const preview = document.createElementNS(SVG_NS, "polyline");
-      preview.setAttribute("points", shape.points.map((point) => `${(20 + point.x * 14).toFixed(1)},${(20 - point.y * 14).toFixed(1)}`).join(" "));
+      preview.setAttribute("points", points.map((point) => `${(20 + point.x * 14).toFixed(1)},${(20 - point.y * 14).toFixed(1)}`).join(" "));
       icon.append(preview);
       const label = document.createElement("span");
       label.textContent = shape.name;
@@ -410,20 +426,25 @@
   }
 
   function saveDrawing() {
-    if (drawingPoints.length < 3) {
+    const cleanPoints = drawingPoints.filter((point) => point && Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (cleanPoints.length < 3) {
       showToast("Draw a shape with at least three points first.");
       return;
     }
-    const minX = Math.min(...drawingPoints.map((point) => point.x));
-    const maxX = Math.max(...drawingPoints.map((point) => point.x));
-    const minY = Math.min(...drawingPoints.map((point) => point.y));
-    const maxY = Math.max(...drawingPoints.map((point) => point.y));
-    const scale = Math.max(maxX - minX, maxY - minY) / 2 || 1;
-    const stride = Math.max(1, Math.ceil(drawingPoints.length / 120));
-    const points = drawingPoints.filter((_, index) => index % stride === 0).map((point) => ({
+    const minX = Math.min(...cleanPoints.map((point) => point.x));
+    const maxX = Math.max(...cleanPoints.map((point) => point.x));
+    const minY = Math.min(...cleanPoints.map((point) => point.y));
+    const maxY = Math.max(...cleanPoints.map((point) => point.y));
+    const scale = Math.max(maxX - minX, maxY - minY, 1) / 2;
+    const stride = Math.max(1, Math.ceil(cleanPoints.length / 120));
+    const points = cleanPoints.filter((_, index) => index % stride === 0).map((point) => ({
       x: Number(((point.x - (minX + maxX) / 2) / scale).toFixed(4)),
       y: Number((((minY + maxY) / 2 - point.y) / scale).toFixed(4))
-    }));
+    })).filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (points.length < 3) {
+      showToast("Your drawing needs more distinct points to save a safe shape.");
+      return;
+    }
     const name = $("#shape-name").value.trim() || `My shape ${savedShapes.length + 1}`;
     const shape = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, name, points };
     savedShapes.push(shape);
