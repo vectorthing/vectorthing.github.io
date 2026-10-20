@@ -9,7 +9,7 @@ We've just added our newest feature! Draw and Save! Just select **Draw your own*
 
 ## Choose a departure airport
 
-Search the airport field by airport name, city, ICAO code, or IATA code, then select the matching airport from the list. The built-in directory includes major airports around the world. Use **Use custom coordinates instead** for an airport or departure point that is not listed.
+Search the airport field by airport name, city, country, ICAO/GPS code, or IATA code, then select the matching airport from the list. The app loads the worldwide OurAirports directory when an internet connection is available and lists popular airports immediately as an offline fallback. Search results are capped at 100 visible matches for responsiveness. Use **Use custom coordinates instead** for an airport or departure point that is not listed.
 
 ## GeoFS flight plans
 

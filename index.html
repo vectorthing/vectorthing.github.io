@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="airport.css?v=20261018-1" />
     <link rel="stylesheet" href="welcome.css?v=20261018-2" />
     <link rel="stylesheet" href="welcome-responsive.css?v=20261018-1" />
+    <link rel="stylesheet" href="theme.css?v=20261020-1" />
   </head>
   <body>
     <section id="welcome-page" class="welcome-page" aria-labelledby="welcome-title">
@@ -51,6 +52,7 @@
         <nav class="side-nav" aria-label="Main navigation">
           <a class="nav-item active" href="#builder"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 19 19 4M5 5h.01M19 19h.01M5 19h.01M19 5h.01"/><path d="M5 5h14v14H5z"/></svg></span>Shape studio</a>
           <a class="nav-item" href="#route-details"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/></svg></span>Flight plan</a>
+          <a class="nav-item" href="#settings" data-page="settings"><span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg></span>Settings</a>
         </nav>
         <div class="sidebar-bottom">
           <div class="sidebar-tip"><span class="tip-spark">✳</span><strong>Make the sky yours.</strong><p>Plan a route, take it to GeoFS, and leave your mark up there.</p><a href="https://www.geo-fs.com/" target="_blank" rel="noreferrer">Explore GeoFS <span>↗</span></a></div>
@@ -126,6 +128,19 @@
             <footer class="main-footer"><span>VectorThing <span class="footer-divider">/</span> Flight plans are estimates. Fly responsibly.</span><a href="https://github.com/vectorthing/vectorthing.github.io" target="_blank" rel="noreferrer">Built for the love of flight <span>✦</span></a></footer>
           </div>
         </section>
+        <section id="settings" class="settings-page" hidden aria-labelledby="settings-title">
+          <div class="settings-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> PREFERENCES</div><h1 id="settings-title">Settings</h1><p>Make VectorThing feel comfortable for you.</p></div></div>
+          <article class="panel settings-card" aria-labelledby="appearance-title">
+            <div class="settings-card-icon" aria-hidden="true">◐</div>
+            <div class="settings-card-copy"><h2 id="appearance-title">Appearance</h2><p>Choose a light or dark look. System follows your device preference.</p></div>
+            <div class="theme-options" role="group" aria-label="Color theme">
+              <button class="theme-option" type="button" data-theme-choice="light" aria-pressed="false"><span aria-hidden="true">☀</span> Light</button>
+              <button class="theme-option" type="button" data-theme-choice="dark" aria-pressed="false"><span aria-hidden="true">☾</span> Dark</button>
+              <button class="theme-option" type="button" data-theme-choice="system" aria-pressed="false"><span aria-hidden="true">◑</span> System</button>
+            </div>
+            <p id="theme-status" class="theme-status" role="status" aria-live="polite"></p>
+          </article>
+        </section>
       </main>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -163,6 +178,6 @@
         </div>
       </div>
     </div>
-    <script src="app.js?v=20261020-1"></script>
+    <script src="app.js?v=20261020-4"></script>
   </body>
 </html>

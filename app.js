@@ -17,7 +17,7 @@
   const discordSessionKey = "vectorthing.discord-session.v1";
   const discordStateKey = "vectorthing.discord-state.v1";
   const shapeNames = { heart: "Heart", star: "Star", infinity: "Infinity", circle: "Circle", diamond: "Diamond", square: "Square", triangle: "Triangle", pentagon: "Pentagon", hexagon: "Hexagon", octagon: "Octagon", rectangle: "Rectangle" };
-  const airports = [
+  const featuredAirports = [
     ["KSFO", "SFO", "San Francisco International", "San Francisco", "USA", 37.6213, -122.3790],
     ["KLAX", "LAX", "Los Angeles International", "Los Angeles", "USA", 33.9416, -118.4085],
     ["KJFK", "JFK", "John F. Kennedy International", "New York", "USA", 40.6413, -73.7781],
@@ -74,6 +74,8 @@
     ["ESSA", "ARN", "Stockholm Arlanda", "Stockholm", "Sweden", 59.6519, 17.9186],
     ["BIRK", "RKV", "Reykjavik Airport", "Reykjavik", "Iceland", 64.1300, -21.9406]
   ];
+  let airports = featuredAirports;
+  let globalAirportsLoaded = false;
   let activeShape = "heart";
   let savedShapes = loadSavedShapes();
   let drawingPoints = [];
@@ -99,23 +101,84 @@
 
   function renderAirports(query = "") {
     const needle = query.trim().toLocaleLowerCase();
-    const matches = airports.filter((airport) => airport.join(" ").toLocaleLowerCase().includes(needle));
     const previous = elements.location.value;
+    const source = needle ? airports : featuredAirports;
+    const selectedAirport = airports.find(([icao]) => icao === previous);
+    const candidates = selectedAirport && !source.some(([icao]) => icao === previous) ? [selectedAirport, ...source] : source;
+    const matches = candidates.filter((airport) => airport.join(" ").toLocaleLowerCase().includes(needle));
+    const visibleMatches = matches.slice(0, 100);
     elements.location.replaceChildren();
-    matches.forEach((airport) => {
+    visibleMatches.forEach((airport) => {
       const option = document.createElement("option");
       option.value = airport[0];
-      option.textContent = `${airport[3]} · ${airport[2]} (${airport[1]} / ${airport[0]})`;
+      const codes = [airport[1], airport[0]].filter(Boolean).join(" / ");
+      option.textContent = `${airport[3]} · ${airport[2]}${codes ? ` (${codes})` : ""}`;
       elements.location.append(option);
     });
-    if (matches.length) {
-      elements.location.value = matches.some(([icao]) => icao === previous) ? previous : matches[0][0];
+    if (visibleMatches.length) {
+      elements.location.value = visibleMatches.some(([icao]) => icao === previous) ? previous : visibleMatches[0][0];
       elements.location.disabled = false;
-      elements.airportStatus.textContent = needle ? `${matches.length} matching airport${matches.length === 1 ? "" : "s"} · choose one below.` : `${airports.length} airports available · search by city or code.`;
-      if (!matches.some(([icao]) => icao === previous)) buildRoute();
+      if (needle) {
+        const count = matches.length > visibleMatches.length ? `Showing first ${visibleMatches.length} of ${matches.length}` : `${matches.length} matching`;
+        elements.airportStatus.textContent = `${count} airport${matches.length === 1 ? "" : "s"} · search by name, city, country or code.`;
+      } else {
+        elements.airportStatus.textContent = globalAirportsLoaded
+          ? `${airports.length.toLocaleString()} worldwide airports loaded · search by name, city, country or code.`
+          : `${featuredAirports.length} popular airports · worldwide directory loads when available.`;
+      }
+      if (!visibleMatches.some(([icao]) => icao === previous)) buildRoute();
     } else {
       elements.location.disabled = true;
-      elements.airportStatus.textContent = "No matching airports. Try another search or enter coordinates instead.";
+      elements.airportStatus.textContent = globalAirportsLoaded
+        ? "No matching airports. Try another name or code, or enter coordinates instead."
+        : "No popular-airport matches yet. The worldwide directory is loading; try again shortly.";
+    }
+  }
+
+  function parseAirportCsv(csvText) {
+    const lines = csvText.split(/\r?\n/);
+    if (!lines.length) return [];
+    const parseRow = (line) => line.match(/("(?:[^"]|"")*"|[^,]*)(,|$)/g)?.map((field) => {
+      const value = field.replace(/,$/, "");
+      return value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1).replace(/""/g, '"') : value;
+    }) || [];
+    const headers = parseRow(lines[0]);
+    const column = Object.fromEntries(headers.map((header, index) => [header, index]));
+    const get = (row, name) => row[column[name]] || "";
+    const supportedTypes = new Set(["large_airport", "medium_airport", "small_airport", "heliport", "seaplane_base", "balloonport"]);
+    const unique = new Map();
+
+    for (const line of lines.slice(1)) {
+      if (!line) continue;
+      const row = parseRow(line);
+      if (!supportedTypes.has(get(row, "type"))) continue;
+      const latitude = Number(get(row, "latitude_deg"));
+      const longitude = Number(get(row, "longitude_deg"));
+      const ident = get(row, "gps_code") || get(row, "ident");
+      const name = get(row, "name");
+      if (!ident || !name || !Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
+      unique.set(get(row, "ident") || ident, [
+        ident.toUpperCase(), get(row, "iata_code").toUpperCase(), name,
+        get(row, "municipality") || get(row, "iso_region") || "Unknown location",
+        get(row, "iso_country") || "Unknown country", latitude, longitude
+      ]);
+    }
+    return [...unique.values()].sort((a, b) => a[2].localeCompare(b[2]));
+  }
+
+  async function loadGlobalAirports() {
+    try {
+      const response = await fetch("https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv", { cache: "force-cache" });
+      if (!response.ok) throw new Error("Airport directory unavailable");
+      const parsedAirports = parseAirportCsv(await response.text());
+      if (!parsedAirports.length) throw new Error("Airport directory was empty");
+      airports = parsedAirports;
+      globalAirportsLoaded = true;
+      renderAirports(elements.airportSearch.value);
+    } catch {
+      globalAirportsLoaded = false;
+      renderAirports(elements.airportSearch.value);
+      elements.airportStatus.textContent = `${featuredAirports.length} popular airports available. Worldwide directory could not load; check your connection.`;
     }
   }
 
@@ -400,6 +463,74 @@
   function showStudio() {
     document.body.classList.add("app-active");
     window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
+  const themePreferenceKey = "vectorthing.theme.v1";
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function applyThemePreference(preference, announce = false) {
+    const theme = preference === "system" ? (systemTheme.matches ? "dark" : "light") : preference;
+    document.body.dataset.theme = theme;
+    try {
+      localStorage.setItem(themePreferenceKey, preference);
+    } catch {
+      // The selected theme still applies for this page session if storage is unavailable.
+    }
+    $$(".theme-option").forEach((button) => {
+      const selected = button.dataset.themeChoice === preference;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    const status = $("#theme-status");
+    if (status) status.textContent = announce ? `${preference[0].toUpperCase()}${preference.slice(1)} theme applied.` : "";
+  }
+
+  function initializeTheme() {
+    let preference = "system";
+    try {
+      const savedPreference = localStorage.getItem(themePreferenceKey);
+      if (["light", "dark", "system"].includes(savedPreference)) preference = savedPreference;
+    } catch {
+      // Use the system preference when browser storage is unavailable.
+    }
+    applyThemePreference(preference);
+    systemTheme.addEventListener("change", () => {
+      if (document.body.dataset.theme && getThemePreference() === "system") applyThemePreference("system");
+    });
+  }
+
+  function getThemePreference() {
+    try {
+      return localStorage.getItem(themePreferenceKey) || "system";
+    } catch {
+      return "system";
+    }
+  }
+
+  function navigateStudioPage(target, link) {
+    const settingsPage = $("#settings");
+    const builder = $(".builder-grid");
+    const settingsSelected = target === "settings";
+    settingsPage.hidden = !settingsSelected;
+    builder.hidden = settingsSelected;
+    $(".page-heading").hidden = settingsSelected;
+    $$(".side-nav .nav-item").forEach((item) => {
+      const selected = item === link;
+      item.classList.toggle("active", selected);
+      if (selected) item.setAttribute("aria-current", "page");
+      else item.removeAttribute("aria-current");
+    });
+    $(".breadcrumb strong").textContent = settingsSelected ? "Settings" : target === "route-details" ? "Flight plan" : "Shape studio";
+    if (settingsSelected) {
+      history.replaceState(null, "", "#settings");
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } else if (target === "route-details") {
+      history.replaceState(null, "", "#route-details");
+      $("#route-details").scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      history.replaceState(null, "", "#builder");
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
   }
 
   function openLoginModal(message = "") {
@@ -811,8 +942,15 @@
     buildRoute();
     showToast("Route preview recentered.");
   });
+  $$(".side-nav .nav-item").forEach((link) => link.addEventListener("click", (event) => {
+    event.preventDefault();
+    navigateStudioPage(link.dataset.page || (link.getAttribute("href") === "#route-details" ? "route-details" : "builder"), link);
+  }));
+  $$(".theme-option").forEach((button) => button.addEventListener("click", () => applyThemePreference(button.dataset.themeChoice, true)));
   renderAirports();
   renderSavedShapes();
   buildRoute();
+  loadGlobalAirports();
+  initializeTheme();
   initializeDiscordAuth();
 })();
