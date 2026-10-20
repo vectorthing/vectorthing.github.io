@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css?v=20261018-1" />
     <link rel="stylesheet" href="drawing.css?v=20261018-1" />
-    <link rel="stylesheet" href="drawing-tools.css?v=20261020-1" />
+    <link rel="stylesheet" href="drawing-tools.css?v=20261020-2" />
     <link rel="stylesheet" href="airport.css?v=20261018-1" />
     <link rel="stylesheet" href="welcome.css?v=20261018-2" />
     <link rel="stylesheet" href="welcome-responsive.css?v=20261018-1" />
@@ -147,6 +147,14 @@
         <p class="step-label">04 — EXPORT</p>
         <h2 id="generate-modal-title">Flight plan ready</h2>
         <p>Use the raw JSON below if a clipboard import is rejected, or generate a SimBrief share link for the same route.</p>
+        <section class="radar-next-steps" aria-labelledby="radar-next-steps-title">
+          <div class="radar-next-steps-copy"><span class="radar-next-steps-eyebrow">YOUR NEXT STEP</span><h3 id="radar-next-steps-title">Ready to see your work live?</h3><p>Open RadarThing to view your GeoFS flight, or set up its userscript or console loader.</p></div>
+          <div class="radar-next-steps-actions">
+            <a class="radar-action radar-action-primary" href="https://radarthing.com/radar" target="_blank" rel="noopener noreferrer">Open RadarThing <span aria-hidden="true">↗</span></a>
+            <a class="radar-action" href="https://radarthing.com/userscript" target="_blank" rel="noopener noreferrer">Get Tampermonkey script <span aria-hidden="true">↗</span></a>
+            <a class="radar-console-guide" href="https://radarthing.com/#install" target="_blank" rel="noopener noreferrer">Console script setup instructions <span aria-hidden="true">↗</span></a>
+          </div>
+        </section>
         <textarea id="flight-plan-json" class="flight-plan-json" readonly spellcheck="false"></textarea>
         <div class="modal-actions">
           <button id="modal-copy-button" class="secondary-button" type="button" onclick="window.copyModalPlan && window.copyModalPlan()">Copy GeoFS JSON</button>

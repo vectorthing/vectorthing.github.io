@@ -411,7 +411,7 @@
 
   function closeLoginModal() {
     $("#login-modal").setAttribute("hidden", "hidden");
-    if (!document.body.classList.contains("app-active")) $("#start-vectoring-button").focus();
+    if (!document.body.classList.contains("app-active")) showStudio();
   }
 
   function updateDiscordAccount(user) {
