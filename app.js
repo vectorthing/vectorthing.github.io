@@ -16,7 +16,7 @@
   const discordRedirectUri = "https://vectorthing.github.io/";
   const discordSessionKey = "vectorthing.discord-session.v1";
   const discordStateKey = "vectorthing.discord-state.v1";
-  const shapeNames = { heart: "Heart", star: "Star", infinity: "Infinity", circle: "Circle", diamond: "Diamond", square: "Square" };
+  const shapeNames = { heart: "Heart", star: "Star", infinity: "Infinity", circle: "Circle", diamond: "Diamond", square: "Square", triangle: "Triangle", pentagon: "Pentagon", hexagon: "Hexagon", octagon: "Octagon", rectangle: "Rectangle" };
   const airports = [
     ["KSFO", "SFO", "San Francisco International", "San Francisco", "USA", 37.6213, -122.3790],
     ["KLAX", "LAX", "Los Angeles International", "Los Angeles", "USA", 33.9416, -118.4085],
@@ -78,6 +78,8 @@
   let savedShapes = loadSavedShapes();
   let drawingPoints = [];
   let isDrawing = false;
+  let drawingMode = "freehand";
+  let drawingClosed = false;
   let route = [];
   let center = { lat: 37.6213, lon: -122.379, name: "San Francisco International" };
   let manualCoordinates = false;
@@ -165,6 +167,24 @@
   function shapeAt(shape, t) {
     if (shape.startsWith("custom:")) return sampleCustomShape(shape, t);
     if (shape === "circle") return { x: Math.cos(t), y: Math.sin(t) };
+    if (["triangle", "pentagon", "hexagon", "octagon", "rectangle"].includes(shape)) {
+      const sides = shape === "triangle" ? 3 : shape === "pentagon" ? 5 : shape === "hexagon" ? 6 : shape === "octagon" ? 8 : 4;
+      const phase = ((t / (Math.PI * 2)) % 1 + 1) % 1;
+      const segment = phase * sides;
+      const index = Math.floor(segment);
+      const fraction = segment - index;
+      const vertex = (vertexIndex) => {
+        if (shape === "rectangle") {
+          const corners = [{ x: -1, y: 0.62 }, { x: 1, y: 0.62 }, { x: 1, y: -0.62 }, { x: -1, y: -0.62 }];
+          return corners[vertexIndex % corners.length];
+        }
+        const angle = -Math.PI / 2 + vertexIndex * Math.PI * 2 / sides;
+        return { x: Math.cos(angle), y: Math.sin(angle) };
+      };
+      const from = vertex(index);
+      const to = vertex(index + 1);
+      return { x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction };
+    }
     if (shape === "square") {
       const phase = ((t / (Math.PI * 2)) % 1 + 1) % 1;
       const side = phase * 4;
@@ -598,12 +618,49 @@
   }
 
   function updateDrawingPreview() {
-    $("#drawing-stroke").setAttribute("points", drawingPoints.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" "));
+    const previewPoints = drawingClosed && drawingPoints.length ? [...drawingPoints, drawingPoints[0]] : drawingPoints;
+    $("#drawing-stroke").setAttribute("points", previewPoints.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" "));
+    const startMarker = $("#drawing-start");
+    if (drawingMode === "straight" && drawingPoints.length) {
+      startMarker.setAttribute("cx", drawingPoints[0].x);
+      startMarker.setAttribute("cy", drawingPoints[0].y);
+      startMarker.setAttribute("r", "5");
+    } else {
+      startMarker.setAttribute("r", "0");
+    }
   }
 
   function clearDrawing() {
     drawingPoints = [];
+    drawingClosed = false;
+    isDrawing = false;
     updateDrawingPreview();
+  }
+
+  function setDrawingMode(mode) {
+    drawingMode = mode;
+    clearDrawing();
+    const canvas = $("#shape-drawing-canvas");
+    canvas.classList.toggle("grid-drawing", mode === "straight");
+    $("#drawing-help").textContent = mode === "straight"
+      ? "Click to place corners on the grid. Click your first point to close the loop."
+      : "Drag inside the canvas. The ends connect to make a flyable loop.";
+    $$(".drawing-mode-button").forEach((button) => {
+      const selected = button.dataset.drawingMode === mode;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  }
+
+  function drawingCanvasPoint(event, snapToGrid = false) {
+    const bounds = drawingCanvas.getBoundingClientRect();
+    let x = clamp((event.clientX - bounds.left) * 600 / bounds.width, 0, 600);
+    let y = clamp((event.clientY - bounds.top) * 300 / bounds.height, 0, 300);
+    if (snapToGrid) {
+      x = clamp(Math.round(x / 20) * 20, 0, 600);
+      y = clamp(Math.round(y / 20) * 20, 0, 300);
+    }
+    return { x, y };
   }
 
   function saveDrawing() {
@@ -659,18 +716,30 @@
   $("#clear-drawing-button").addEventListener("click", clearDrawing);
   $("#save-shape-button").addEventListener("click", saveDrawing);
   const drawingCanvas = $("#shape-drawing-canvas");
+  $$(".drawing-mode-button").forEach((button) => button.addEventListener("click", () => setDrawingMode(button.dataset.drawingMode)));
   drawingCanvas.addEventListener("pointerdown", (event) => {
-    const bounds = drawingCanvas.getBoundingClientRect();
-    const point = { x: (event.clientX - bounds.left) * 600 / bounds.width, y: (event.clientY - bounds.top) * 300 / bounds.height };
+    if (drawingMode === "straight") {
+      if (drawingClosed) return;
+      const point = drawingCanvasPoint(event, true);
+      const first = drawingPoints[0];
+      if (first && drawingPoints.length >= 3 && Math.hypot(point.x - first.x, point.y - first.y) <= 14) {
+        drawingClosed = true;
+      } else if (!first || Math.hypot(point.x - drawingPoints[drawingPoints.length - 1].x, point.y - drawingPoints[drawingPoints.length - 1].y) >= 10) {
+        drawingPoints.push(point);
+      }
+      updateDrawingPreview();
+      return;
+    }
+    const point = drawingCanvasPoint(event);
     drawingPoints = [point];
+    drawingClosed = false;
     isDrawing = true;
     drawingCanvas.setPointerCapture(event.pointerId);
     updateDrawingPreview();
   });
   drawingCanvas.addEventListener("pointermove", (event) => {
     if (!isDrawing) return;
-    const bounds = drawingCanvas.getBoundingClientRect();
-    const point = { x: clamp((event.clientX - bounds.left) * 600 / bounds.width, 0, 600), y: clamp((event.clientY - bounds.top) * 300 / bounds.height, 0, 300) };
+    const point = drawingCanvasPoint(event);
     const previous = drawingPoints[drawingPoints.length - 1];
     if (Math.hypot(point.x - previous.x, point.y - previous.y) >= 2.5) {
       drawingPoints.push(point);
