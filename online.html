@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b4b99" />
+    <meta name="description" content="See how many browser tabs are currently active on VectorThing." />
+    <title>Live visitors — VectorThing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="online.css" />
+  </head>
+  <body>
+    <main class="online-shell">
+      <header class="online-header">
+        <a class="online-brand" href="index.html" aria-label="VectorThing home">vector<span>thing</span></a>
+        <span class="online-live-label"><i></i> LIVE PRESENCE</span>
+      </header>
+      <section class="online-card" aria-labelledby="online-title">
+        <div class="online-eyebrow"><span></span> RIGHT NOW</div>
+        <h1 id="online-title">Visitors online</h1>
+        <p class="online-intro">A live count of browsers currently active on VectorThing.</p>
+        <div class="online-count-wrap" aria-live="polite" aria-atomic="true">
+          <strong id="online-count">—</strong>
+          <span id="online-count-label">connecting…</span>
+        </div>
+        <p id="online-status" class="online-status" role="status">Connecting to the live counter…</p>
+        <div class="online-divider"></div>
+        <p class="online-note">This is a real-time presence count, not an analytics tracker. Multiple tabs in the same browser profile count once; the same person on another device may count again.</p>
+        <a class="online-back-link" href="index.html">← Back to VectorThing</a>
+      </section>
+      <footer class="online-footer">VectorThing <span>/</span> Live visitor count</footer>
+    </main>
+    <script src="online-config.js"></script>
+    <script type="module" src="online-presence.js"></script>
+  </body>
+</html>

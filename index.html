@@ -40,7 +40,7 @@
         </div>
       </main>
       <section id="welcome-how-it-works" class="welcome-how"><div><span class="welcome-eyebrow"><span></span> FROM IDEA TO AIR</span><h2>Three steps to take flight.</h2></div><div class="welcome-steps"><article><b>01</b><strong>Choose your shape</strong><p>Pick a classic design or draw a custom loop.</p></article><article><b>02</b><strong>Make it yours</strong><p>Set your airport, route size, altitude, and speed.</p></article><article><b>03</b><strong>Fly your creation</strong><p>Preview your route, then export it for GeoFS.</p></article></div></section>
-      <footer class="welcome-footer"><span>VectorThing <i>/</i> Draw something extraordinary.</span><a href="https://www.geo-fs.com/" target="_blank" rel="noreferrer">Explore GeoFS ↗</a></footer>
+      <footer class="welcome-footer"><span>VectorThing <i>/</i> Draw something extraordinary.</span><div><a href="online.html">Live visitors</a><a href="https://www.geo-fs.com/" target="_blank" rel="noreferrer">Explore GeoFS ↗</a></div></footer>
     </section>
     <div class="app-shell">
       <aside class="sidebar">
@@ -125,7 +125,7 @@
             <section class="summary-grid" aria-label="Flight plan summary"><article class="summary-card"><div class="summary-icon distance-icon"><svg viewBox="0 0 24 24"><path d="M4 18 9 6l6 12 5-12"/><circle cx="4" cy="18" r="1.5"/><circle cx="20" cy="6" r="1.5"/></svg></div><div><span class="summary-label">ROUTE DISTANCE</span><strong id="distance-value">— <small>NM</small></strong></div><span class="summary-decoration">↗</span></article><article class="summary-card"><div class="summary-icon time-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></div><div><span class="summary-label">EST. FLIGHT TIME</span><strong id="time-value">— <small>MIN</small></strong></div><span class="summary-decoration">◷</span></article><article class="summary-card"><div class="summary-icon point-icon"><svg viewBox="0 0 24 24"><path d="M4 17.5 9 6l6 12 5-12"/><circle cx="4" cy="17.5" r="2"/><circle cx="20" cy="6" r="2"/></svg></div><div><span class="summary-label">WAYPOINTS</span><strong id="point-value">48 <small>PTS</small></strong></div><span class="summary-decoration">⌁</span></article></section>
 
             <section id="route-details" class="panel route-panel"><div class="route-header"><div><span class="step-label">03 — ROUTE DATA</span><h2>Waypoints <span class="count-chip" id="waypoint-count">48</span></h2></div><div class="route-tools"><button id="copy-button" class="secondary-button" type="button"><svg viewBox="0 0 20 20"><rect x="7" y="6" width="9" height="11" rx="1.5"/><path d="M12 6V4.5A1.5 1.5 0 0 0 10.5 3h-6A1.5 1.5 0 0 0 3 4.5v8A1.5 1.5 0 0 0 4.5 14H7"/></svg><span>Copy GeoFS JSON</span></button><button id="download-button" class="download-button" type="button"><svg viewBox="0 0 20 20"><path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 13v3a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3"/></svg><span>Download GeoFS JSON</span></button></div></div><div class="table-wrap"><table><thead><tr><th>WAYPOINT</th><th>LATITUDE</th><th>LONGITUDE</th><th>HEADING</th><th>ALTITUDE</th><th>LEG</th></tr></thead><tbody id="waypoint-table"></tbody></table></div><div class="table-footer"><span id="table-range">Showing 1–6 of 48 waypoints</span><span>GeoFS route JSON · WGS84 decimal degrees</span></div><p class="geofs-import-note">In GeoFS, open <strong>NAV → Flight Plan → Import</strong> and choose this downloaded file.</p></section>
-            <footer class="main-footer"><span>VectorThing <span class="footer-divider">/</span> Flight plans are estimates. Fly responsibly.</span><a href="https://github.com/vectorthing/vectorthing.github.io" target="_blank" rel="noreferrer">Built for the love of flight <span>✦</span></a></footer>
+            <footer class="main-footer"><span>VectorThing <span class="footer-divider">/</span> Flight plans are estimates. Fly responsibly.</span><span><a href="online.html">Live visitors</a> · <a href="https://github.com/vectorthing/vectorthing.github.io" target="_blank" rel="noreferrer">Built for the love of flight <span>✦</span></a></span></footer>
           </div>
         </section>
         <section id="settings" class="settings-page" hidden aria-labelledby="settings-title">
@@ -178,6 +178,8 @@
         </div>
       </div>
     </div>
+    <script src="online-config.js"></script>
+    <script type="module" src="online-presence.js"></script>
     <script src="app.js?v=20261020-4"></script>
   </body>
 </html>
