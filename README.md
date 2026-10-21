@@ -2,10 +2,6 @@
 
 VectorThing is a browser-based air-art planner for GeoFS. Choose a built-in shape or draw and save your own, set the center and flight settings, preview the route, then export or copy a GeoFS flight-plan JSON file.
 
-## Live visitor count
-
-Open `online.html` to view the live count of active browser profiles. It uses Supabase Realtime Presence, not Google Analytics. To enable it, create a Supabase project, ensure Realtime allows public channels, then copy the project's URL and publishable (or legacy anon) key into `online-config.js`. These are public client-side values; never put a `service_role` key in this file. Browsers with multiple open tabs count once; a person using different devices or browser profiles may count more than once. The dashboard is public, so anyone who knows its URL can view it.
-
 
 ## Draw and save shapes
 
